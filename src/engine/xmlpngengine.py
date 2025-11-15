@@ -30,6 +30,12 @@ def make_png_xml(frames, save_dir, character_name="Result", progressupdatefn=Non
     # print(len(imghashes))
     # print(len(frames))
 
+    prefix_label = ''
+    if prefix_type == 'custom':
+        prefix_label = custom_prefix
+    elif prefix_type == 'nothing':
+        prefix_label = 'nothing'
+
     try:
         # init XML
         root = ET.Element("TextureAtlas")
@@ -43,12 +49,12 @@ def make_png_xml(frames, save_dir, character_name="Result", progressupdatefn=Non
             if f.data.from_single_png or (not f.data.from_single_png and f.modified):
                 if prefix_type == 'charname':
                     final_pose_name = f"{character_name} {final_pose_name}"
-                elif prefix_type == 'custom':
-                    final_pose_name = f"{custom_prefix} {final_pose_name}"
+                elif prefix_label:
+                    final_pose_name = f"{prefix_label} {final_pose_name}"
             else:
-                if must_use_prefix and prefix_type == 'custom':
-                    final_pose_name = f"{custom_prefix} {final_pose_name}"
-            
+                if must_use_prefix and prefix_label:
+                    final_pose_name = f"{prefix_label} {final_pose_name}"
+
             f.data.xml_pose_name = final_pose_name
         
         frame_dict_arr = []
