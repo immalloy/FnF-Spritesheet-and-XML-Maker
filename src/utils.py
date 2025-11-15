@@ -7,7 +7,8 @@ g_settings = {
     "isclip": 1,
     "prefix_type": "charname",
     "custom_prefix": "",
-    "must_use_prefix": 0
+    "must_use_prefix": 0,
+    "no_merge": 0
 } # dict containing all settings (check settingswindow.py)
 
 def get_stylesheet_from_file(filename):

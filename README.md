@@ -33,6 +33,9 @@ If your individual frames have extra whitespace in them and you want them all cr
 <img src="./docs/bbox-comparison.png" width="400px" /><br />
 On left is how the image will be considered if this checkbox is left unchecked. On the right is how it'll be considered if it is checked. <small>(Side note: Most of the time you won't really have to use this feature, but it is provided just in case)</small>
 
+### Keep duplicate frames in the spritesheet
+By default the tool will merge identical images so the generated PNG only contains a single copy of each unique frame (the XML still references the frame as many times as needed). If you need the final PNG to contain each duplicate as a separate entry, open the "Spritesheet Generation Settings" window and enable the checkbox labelled "Do not merge look-alike frames". This disables de-duplication while generating the spritesheet so the PNG will include every frame exactly as it was imported. Note that this can significantly increase the final image size.
+
 ### Generating the final XML and PNG files
 When you're done adding all the frames and giving them animation names, it's time to generate the final PNG and XML files!
 To do so, just click the "Generate XML" button. Select the location you want the files saved and the xml and png files will be generated.<br />
