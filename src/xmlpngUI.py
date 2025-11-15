@@ -1,10 +1,9 @@
 import sys
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QActionGroup, QApplication, QGridLayout, QInputDialog, QLineEdit, QMainWindow, QMessageBox, QProgressDialog, QPushButton, QSpacerItem, QLabel, QFileDialog
 from os import path
 from animationwindow import AnimationView
-import engine.icongridutils as icongridutils
 import engine.spritesheetutils as spritesheetutils
 # from frameorderscreen import FrameOrderScreen
 from xmltablewindow import XMLTableView
@@ -66,29 +65,6 @@ class MyApp(QMainWindow):
         self.ui.myTabs.setCurrentIndex(0)
 
         self.setWindowIcon(QIcon("./assets/appicon.png"))
-        self.icongrid_zoom = 1
-        self.ui.uploadicongrid_btn.clicked.connect(self.uploadIconGrid)
-        self.ui.actionImport_IconGrid.triggered.connect(self.uploadIconGrid)
-        self.ui.generateicongrid_btn.clicked.connect(self.getNewIconGrid)
-        self.ui.uploadicons_btn.clicked.connect(self.appendIcon)
-        self.ui.actionImport_Icons.triggered.connect(self.appendIcon)
-        self.ui.actionClear_IconGrid.triggered.connect(self.clearIconGrid)
-        self.ui.actionClear_Icon_selection.triggered.connect(self.clearSelectedIcons)
-
-        self.action_zoom_in = QAction(self.ui.icongrid_holder_label)
-        self.ui.icongrid_holder_label.addAction(self.action_zoom_in)
-        self.action_zoom_in.triggered.connect(self.zoomInPixmap)
-        self.action_zoom_in.setShortcut("Ctrl+i")
-
-        self.action_zoom_out = QAction(self.ui.icongrid_holder_label)
-        self.ui.icongrid_holder_label.addAction(self.action_zoom_out)
-        self.action_zoom_out.triggered.connect(self.zoomOutPixmap)
-        self.action_zoom_out.setShortcut("Ctrl+o")
-
-        self.ui.zoom_label.setText("Zoom: 100%")
-
-        self.iconpaths = []
-        self.icongrid_path = ""
 
         self.ui.posename_btn.clicked.connect(self.setAnimationNames)
         self.ui.posename_btn.setDisabled(True)
@@ -100,6 +76,8 @@ class MyApp(QMainWindow):
         self.ui.actionImport_Images.triggered.connect(self.open_frame_imgs)
         self.ui.action_import_existing.triggered.connect(self.open_existing_spsh_xml)
         self.ui.actionImport_from_GIF.triggered.connect(self.open_gif)
+        self.ui.actionSort_Frames_by_Filename.triggered.connect(self.sort_frames_by_filename)
+        self.ui.actionSort_Frames_by_Filename.setEnabled(False)
 
         self.num_rows = 1 + self.num_labels//self.num_cols
         
@@ -117,7 +95,6 @@ class MyApp(QMainWindow):
         self.frames_layout.addItem(hspcr, 0, self.num_cols, self.num_rows, 1)
 
         self.ui.actionClear_Spritesheet_Grid.triggered.connect(self.clear_spriteframe_grid)
-        self.ui.myTabs.currentChanged.connect(self.handle_tab_change)
         self.ui.spsh_settings_btn.clicked.connect(self.show_settings)
 
         self.settings_widget = SettingsWindow()
@@ -141,8 +118,6 @@ class MyApp(QMainWindow):
         self.ui.actionView_XML_structure.setEnabled(len(self.labels) > 0)
         self.ui.actionFlipX.triggered.connect(lambda: self.flip_labels('X'))
         self.ui.actionFlipY.triggered.connect(lambda: self.flip_labels('Y'))
-
-        self.ui.use_psychengine_checkbox.clicked.connect(self.handle_psychengine_checkbox)
 
         # self.frame_order_screen = FrameOrderScreen()
         # self.ui.actionChange_Frame_Ordering.triggered.connect(self.show_frame_order_screen)
@@ -215,9 +190,6 @@ class MyApp(QMainWindow):
             
             self.ui.posename_btn.setDisabled(self.num_labels <= 0)
 
-    def handle_psychengine_checkbox(self, checked):
-        self.ui.uploadicongrid_btn.setEnabled(not checked)
-    
     # def show_frame_order_screen(self):
         # self.frame_order_screen.set_frame_dict(self.frame_dict)
         # self.frame_order_screen.show()
@@ -260,20 +232,6 @@ class MyApp(QMainWindow):
     def show_settings(self):
         self.settings_widget.show()
 
-    def handle_tab_change(self, newtabind):
-        self.ui.actionClear_Spritesheet_Grid.setDisabled(newtabind != 0)
-        self.ui.action_import_existing.setDisabled(newtabind != 0)
-        self.ui.actionImport_from_GIF.setDisabled(newtabind != 0)
-        self.ui.actionImport_Images.setDisabled(newtabind != 0)
-        self.ui.actionEdit_Frame_Properties.setDisabled(newtabind != 0 or len(self.selected_labels) <= 0)
-        self.ui.menuExport.setDisabled(newtabind != 0)
-        self.ui.menuEdit_Selected_Images.setDisabled(newtabind != 0)
-
-        self.ui.actionImport_IconGrid.setDisabled(newtabind != 1)
-        self.ui.actionImport_Icons.setDisabled(newtabind != 1)
-        self.ui.actionClear_IconGrid.setDisabled(newtabind != 1)
-        self.ui.actionClear_Icon_selection.setDisabled(newtabind != 1)
-    
     def onCharacterNameChange(self):
         for label in self.labels:
             label.img_label.setToolTip(label.get_tooltip_string(self))
@@ -283,6 +241,7 @@ class MyApp(QMainWindow):
         for lab in labs:
             lab.remove_self(self)
         self.ui.actionEdit_Frame_Properties.setDisabled(len(self.selected_labels) <= 0)
+        self.ui.actionSort_Frames_by_Filename.setEnabled(len(self.labels) > 0)
     
     def resizeEvent(self, a0):
         w = self.width()
@@ -370,6 +329,7 @@ class MyApp(QMainWindow):
         self.frames_layout.addWidget(self.add_img_button, self.num_labels // self.num_cols, self.num_labels % self.num_cols, Qt.AlignmentFlag(0x1|0x20))
         self.ui.actionPreview_Animation.setEnabled(len(self.labels) > 0)
         self.ui.actionView_XML_structure.setEnabled(len(self.labels) > 0)
+        self.ui.actionSort_Frames_by_Filename.setEnabled(len(self.labels) > 0)
         # self.ui.actionChange_Frame_Ordering.setEnabled(len(self.labels) > 0)
         
         # self.update_frame_dict(sp.img_xml_data.pose_name, sp)
@@ -397,7 +357,14 @@ class MyApp(QMainWindow):
             self.frames_layout.addWidget(sp, i//self.num_cols, i%self.num_cols, Qt.AlignmentFlag(0x1|0x20))
         self.frames_layout.removeWidget(self.add_img_button)
         self.frames_layout.addWidget(self.add_img_button, self.num_labels // self.num_cols, self.num_labels % self.num_cols, Qt.AlignmentFlag(0x1|0x20))
-    
+
+    def sort_frames_by_filename(self):
+        if len(self.labels) == 0:
+            return
+
+        self.labels.sort(key=lambda frame: path.basename(frame.data.imgpath).lower())
+        self.re_render_grid()
+
     def export_bunch_of_imgs(self):
         savedir = QFileDialog.getExistingDirectory(caption="Save image sequence to...")
         updatefn, progbar = display_progress_bar(self, "Exporting Image Sequence", startlim=0, endlim=len(self.labels))
@@ -447,147 +414,12 @@ class MyApp(QMainWindow):
                 icon=QMessageBox.Critical
             )
     
-    def zoomInPixmap(self):
-        if self.icongrid_path and self.icongrid_zoom <= 5:
-            self.icongrid_zoom *= 1.1
-            icongrid_pixmap = QPixmap(self.icongrid_path)
-            w = icongrid_pixmap.width()
-            h = icongrid_pixmap.height()
-            icongrid_pixmap = icongrid_pixmap.scaled(int(w*self.icongrid_zoom), int(h*self.icongrid_zoom), 1)
-            self.ui.icongrid_holder_label.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-            self.ui.scrollAreaWidgetContents_2.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-            self.ui.icongrid_holder_label.setPixmap(icongrid_pixmap)
-            self.ui.zoom_label.setText("Zoom: %.2f %%" % (self.icongrid_zoom*100))
 
 
-    def zoomOutPixmap(self):
-        if self.icongrid_path and self.icongrid_zoom >= 0.125:
-            self.icongrid_zoom /= 1.1
-            icongrid_pixmap = QPixmap(self.icongrid_path)
-            w = icongrid_pixmap.width()
-            h = icongrid_pixmap.height()
-            icongrid_pixmap = icongrid_pixmap.scaled(int(w*self.icongrid_zoom), int(h*self.icongrid_zoom), 1)
-            self.ui.icongrid_holder_label.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-            self.ui.scrollAreaWidgetContents_2.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-            self.ui.icongrid_holder_label.setPixmap(icongrid_pixmap)
-            self.ui.zoom_label.setText("Zoom: %.2f %%" % (self.icongrid_zoom*100))
-    
-    def uploadIconGrid(self):
-        print("Uploading icongrid...")
-        self.icongrid_path = self.get_asset_path("Select the Icon-grid", "PNG Images (*.png)")
-        icongrid_pixmap = QPixmap(self.icongrid_path)
-        self.ui.icongrid_holder_label.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-        self.ui.scrollAreaWidgetContents_2.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-        self.ui.icongrid_holder_label.setPixmap(icongrid_pixmap)
-    
-    def clearIconGrid(self):
-        self.icongrid_path = ""
-        self.ui.icongrid_holder_label.clear()
-    
-    def getNewIconGrid(self):
-        if self.ui.use_psychengine_checkbox.isChecked():
-            if len(self.iconpaths) > 0:
-                print("Using psych engine style icon grid generation....")
-                savepath, _ = QFileDialog.getSaveFileName(self, "Save as filename", filter="PNG files (*.png)")
 
-                stat, problemimg, exception_msg = icongridutils.makePsychEngineIconGrid(self.iconpaths, savepath)
 
-                if exception_msg is not None:
-                    self.display_msg_box(
-                        window_title="Error!", 
-                        text=f"An error occured: {exception_msg}",
-                        icon=QMessageBox.Critical
-                    )
-                else:
-                    if stat == 0:
-                        self.display_msg_box(
-                            window_title="Done!", 
-                            text="Your icon-grid has been generated!",
-                            icon=QMessageBox.Information
-                        )
-                        # display final image onto the icon display area 
-                        icongrid_pixmap = QPixmap(savepath)
-                        self.ui.icongrid_holder_label.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-                        self.ui.scrollAreaWidgetContents_2.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-                        self.ui.icongrid_holder_label.setPixmap(icongrid_pixmap)
-                    elif stat == 1:
-                        self.display_msg_box(
-                            window_title="Icon image error",
-                            text=f"The icon {problemimg} is bigger than 150x150 and couldn't be added to the final grid\nThe final grid was generated without it",
-                            icon=QMessageBox.Warning
-                        )
-            else:
-                self.display_msg_box(
-                    window_title="Error!", 
-                    text="Please select some icons",
-                    icon=QMessageBox.Critical
-                )
-            
-            # no need to continue past this if in psych-engine mode
-            return
-        
-        if self.icongrid_path != '' and len(self.iconpaths) > 0:
-            print("Valid!")
-            # savedir = QFileDialog.getExistingDirectory(caption="Save New Icongrid to...")
-            # if savedir != '':
-            stat, newinds, problemimg, exception_msg = icongridutils.appendIconToGrid(self.icongrid_path, self.iconpaths) #, savedir)
-            print("[DEBUG] Function finished with status: ", stat)
-            errmsgs = [
-                'Icon grid was too full to insert a new icon', 
-                'Your character icon: {} is too big! Max size: 150 x 150',
-                'Unable to find suitable location to insert your icon'
-            ]
 
-            if exception_msg is not None:
-                self.display_msg_box(
-                    window_title="An Error occured", 
-                    text=("An Exception (Error) occurred somewhere\nError message:\n"+exception_msg),
-                    icon=QMessageBox.Critical
-                )
-            else:
-                if stat == 0:
-                    self.display_msg_box(
-                        window_title="Done!", 
-                        text="Your icon-grid has been generated!\nYour icon's indices are {}".format(newinds),
-                        icon=QMessageBox.Information
-                    )
-                elif stat == 4:
-                    self.display_msg_box(
-                        window_title="Warning!", 
-                        text="One of your icons was smaller than the 150 x 150 icon size!\nHowever, your icon-grid is generated but the icon has been re-adjusted. \nYour icon's indices: {}".format(newinds),
-                        icon=QMessageBox.Warning
-                    )
-                else:
-                    self.display_msg_box(
-                        window_title="Error!", 
-                        text=errmsgs[stat - 1].format(problemimg),
-                        icon=QMessageBox.Critical
-                )
-            icongrid_pixmap = QPixmap(self.icongrid_path)
-            self.ui.icongrid_holder_label.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-            self.ui.scrollAreaWidgetContents_2.setFixedSize(icongrid_pixmap.width(), icongrid_pixmap.height())
-            self.ui.icongrid_holder_label.setPixmap(icongrid_pixmap)
-        else:
-            errtxt = "Please add an icon-grid image" if self.icongrid_path == '' else "Please add an icon"
-            self.display_msg_box(
-                window_title="Error!", 
-                text=errtxt,
-                icon=QMessageBox.Critical
-            )
-    
-    def appendIcon(self):
-        print("Appending icon")
-        self.iconpaths = self.get_asset_path("Select your character icons", "PNG Images (*.png)", True)
-        print("Got icon: ", self.iconpaths)
-        if len(self.iconpaths) > 0:
-            print("Valid selected")
-            self.ui.iconselected_label.setText("No. of\nicons selected:\n{}".format(len(self.iconpaths)))
-        else:
-            self.ui.iconselected_label.setText("No. of\nicons selected:\n0")
-    
-    def clearSelectedIcons(self):
-        self.iconpaths = []
-        self.ui.iconselected_label.setText("Number of\nicons selected:\n{}".format(len(self.iconpaths)))
+
 
     def setAnimationNames(self):
         if len(self.selected_labels) == 0:

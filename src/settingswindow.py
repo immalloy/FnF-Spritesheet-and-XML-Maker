@@ -33,12 +33,15 @@ class SettingsWindow(QWidget):
             return 'custom'
         elif self.ui.charname_first_radiobtn.isChecked():
             return 'charname'
+        elif self.ui.nothing_prefix_radiobtn.isChecked():
+            return 'nothing'
         elif self.ui.no_prefix_radiobtn.isChecked():
             return 'noprefix'
-    
+
     def _set_radiobuttons(self):
         self.ui.custom_prefix_radiobtn.setChecked(self.prefix_type == 'custom')
         self.ui.charname_first_radiobtn.setChecked(self.prefix_type == 'charname')
+        self.ui.nothing_prefix_radiobtn.setChecked(self.prefix_type == 'nothing')
         self.ui.no_prefix_radiobtn.setChecked(self.prefix_type == 'noprefix')
     
     def restoreToNormal(self):
